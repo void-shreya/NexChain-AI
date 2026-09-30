@@ -25,7 +25,6 @@ export const ControlTowerPage = () => {
   const [warehouses, setWarehouses] = useState([]);
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [displayMode, setDisplayMode] = useState('MAP'); // 'MAP' | 'HOLOGRAM'
   const { activeDisruptions } = useDisruption();
   const navigate = useNavigate();
 
@@ -160,7 +159,7 @@ export const ControlTowerPage = () => {
       </div>
 
       {/* Main Interactive Map & Telemetry Inspector Split */}
-      <div style={{ display: 'grid', gridTemplateColumns: selectedEntity ? '2.2fr 1fr' : '1fr', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(320px, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
         {/* Full Interactive Map */}
         <div className="glass-panel" style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -171,41 +170,40 @@ export const ControlTowerPage = () => {
               <span className="badge badge-warning">{shipments.length} Active Shipments</span>
               {activeDisruptions.length > 0 && <span className="badge badge-critical">1 Disruption Zone</span>}
             </div>
-
-            {/* View Switcher: GIS Map vs 3D Holographic Core */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <button
-                onClick={() => setDisplayMode('MAP')}
-                className={`btn ${displayMode === 'MAP' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ fontSize: '0.72rem', padding: '0.35rem 0.75rem' }}
-              >
-                🗺️ GIS Map
-              </button>
-              <button
-                onClick={() => setDisplayMode('HOLOGRAM')}
-                className={`btn ${displayMode === 'HOLOGRAM' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ fontSize: '0.72rem', padding: '0.35rem 0.75rem' }}
-              >
-                🔮 3D Hologram Net
-              </button>
-            </div>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              Click any node marker to inspect telemetry
+            </span>
           </div>
 
-          {displayMode === 'MAP' ? (
-            <SupplyMap
-              suppliers={suppliers}
-              warehouses={warehouses}
-              shipments={shipments}
-              disruptions={activeDisruptions}
-              onSelectEntity={(entity) => setSelectedEntity(entity)}
-              height="580px"
-            />
-          ) : (
-            <div style={{ padding: '0.5rem 0' }}>
-              <HologramCore compact={false} />
-            </div>
-          )}
+          <SupplyMap
+            suppliers={suppliers}
+            warehouses={warehouses}
+            shipments={shipments}
+            disruptions={activeDisruptions}
+            onSelectEntity={(entity) => setSelectedEntity(entity)}
+            height="580px"
+          />
         </div>
+
+        {/* Right Side Panel: If entity selected -> Telemetry; Else -> Live 3D Holographic Supply Matrix */}
+        {!selectedEntity && (
+          <div className="glass-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Radio size={16} color="var(--accent-cyan)" />
+                <h3 style={{ fontSize: '1rem' }}>3D Holographic Spatial Matrix</h3>
+              </div>
+              <span className="badge badge-success">3D MESH LIVE</span>
+            </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Real-time vector projection of Indian supply corridors, warehouse buffer thresholds, and autonomous agent monitoring.
+            </p>
+            <HologramCore compact={false} />
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+              Tip: Click any node on the left GIS Map to inspect telemetry
+            </div>
+          </div>
+        )}
 
         {/* Selected Entity Inspector Panel */}
         {selectedEntity && (

@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   ChevronRight,
   Cpu,
+  Activity,
 } from 'lucide-react';
 import { agentApi, disruptionsApi, decisionsApi } from '../services/api';
 import { useDisruption } from '../context/DisruptionContext';

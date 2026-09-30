@@ -19,7 +19,7 @@ import { useDisruption } from '../context/DisruptionContext';
 import { demoApi } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
-export const Navbar = ({ onOpenVoiceModal, onOpenHoloModal }) => {
+export const Navbar = ({ onOpenVoiceModal }) => {
   const { user, quickLogin, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { activeDisruptions, isDemoRunning, triggerDemoDisruption, unreadNotificationCount } = useDisruption();
@@ -125,21 +125,6 @@ export const Navbar = ({ onOpenVoiceModal, onOpenHoloModal }) => {
         >
           <Mic size={16} />
           <span>Voice AI</span>
-        </button>
-
-        {/* 3D Hologram Matrix Trigger */}
-        <button
-          onClick={onOpenHoloModal}
-          className="btn btn-secondary"
-          style={{
-            borderColor: 'rgba(139, 92, 246, 0.6)',
-            color: '#c084fc',
-            boxShadow: '0 0 12px rgba(139, 92, 246, 0.3)',
-          }}
-          title="Open 3D Hologram Supply Matrix"
-        >
-          <Radio size={16} />
-          <span>3D Hologram</span>
         </button>
 
         {/* Notifications Icon */}

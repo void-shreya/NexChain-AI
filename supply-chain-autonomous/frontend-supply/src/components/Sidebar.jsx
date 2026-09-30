@@ -17,6 +17,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { useDisruption } from '../context/DisruptionContext';
+import { HologramSphere } from './HologramSphere';
 
 const navigationItems = [
   { path: '/dashboard', label: 'Control Tower', icon: LayoutDashboard },
@@ -147,26 +148,9 @@ export const Sidebar = () => {
         })}
       </nav>
 
-      {/* Autonomous Guard Indicator Footer */}
-      <div
-        style={{
-          padding: '1rem 1.25rem',
-          borderTop: '1px solid var(--border-color)',
-          backgroundColor: 'rgba(0,0,0,0.15)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Agent Autonomy
-          </span>
-          <span className="pulse-indicator pulse-indicator-green" />
-        </div>
-        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent-emerald)' }}>
-          AUTONOMOUS ACTIVE
-        </div>
-        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-          Auto-Execute Threshold: ₹5,00,000
-        </div>
+      {/* 3D Animated Hologram Telemetry Footer */}
+      <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border-color)', backgroundColor: 'rgba(0,0,0,0.2)' }}>
+        <HologramSphere size={44} label="3D GUARDIAN" subtitle="SPATIAL MESH" />
       </div>
     </aside>
   );

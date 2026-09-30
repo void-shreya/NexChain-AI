@@ -29,6 +29,7 @@ import {
 } from 'recharts';
 import { dashboardApi, suppliersApi, shipmentsApi, disruptionsApi } from '../services/api';
 import { SupplyMap } from '../maps/SupplyMap';
+import { HologramSphere } from '../components/HologramSphere';
 import { useDisruption } from '../context/DisruptionContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -129,6 +130,12 @@ export const DashboardPage = () => {
               </p>
             </div>
           </div>
+
+          {/* 3D Animated Hologram Telemetry Graphic */}
+          <div style={{ minWidth: '220px' }}>
+            <HologramSphere size={50} label="DISRUPTION RADAR" subtitle="CHAKAN ANOMALY" />
+          </div>
+
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <button
               onClick={() => navigate('/decisions')}
@@ -157,10 +164,10 @@ export const DashboardPage = () => {
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '1rem',
+            gap: '1.5rem',
           }}
         >
-          <div>
+          <div style={{ flex: 1, minWidth: '280px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
               <Sparkles size={16} color="var(--accent-cyan)" />
               <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-cyan)', textTransform: 'uppercase' }}>
@@ -169,9 +176,15 @@ export const DashboardPage = () => {
             </div>
             <h3 style={{ fontSize: '1.1rem' }}>SupplyChain Guardian Monitoring 12 Suppliers & 5 Mega Warehouses</h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Click 'Demo Disruption' to simulate a major semiconductor supplier outage and observe autonomous recovery.
+              15-step autonomous recovery sequence armed. Continuous Indian logistics corridor spatial telemetry active.
             </p>
           </div>
+
+          {/* 3D Animated Hologram Telemetry Graphic */}
+          <div style={{ minWidth: '220px' }}>
+            <HologramSphere size={50} label="3D SUPPLY MESH" subtitle="REAL-TIME TELEMETRY" />
+          </div>
+
           <button
             onClick={triggerDemoDisruption}
             disabled={isDemoRunning}
