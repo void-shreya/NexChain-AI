@@ -1,6 +1,13 @@
 # SupplyChain Guardian - Autonomous Backend & Decision Service
 
+[![Backend Deployment](https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://nexchain-ai.onrender.com)
+[![Frontend Deployment](https://img.shields.io/badge/Frontend-Vercel-black?style=for-the-badge&logo=vercel)](https://nex-chain-ai-6rah.vercel.app/)
+
 Production-grade Express.js REST API and Autonomous Agent system for supply chain disruption detection, predictive impact modeling, what-if simulation, and human-in-the-loop recovery dispatch.
+
+- **Live Production API**: [https://nexchain-ai.onrender.com](https://nexchain-ai.onrender.com)
+- **Live Health Endpoint**: [https://nexchain-ai.onrender.com/api/health](https://nexchain-ai.onrender.com/api/health)
+- **Paired Frontend Web App**: [https://nex-chain-ai-6rah.vercel.app/](https://nex-chain-ai-6rah.vercel.app/)
 
 ## Architecture
 

@@ -1,7 +1,22 @@
 # NexChain AI - Supply Chain Disruption Autonomous Response Platform
 ### Codename: SupplyChain Guardian v2.4
 
+[![Frontend Deployment](https://img.shields.io/badge/Frontend-Vercel-black?style=for-the-badge&logo=vercel)](https://nex-chain-ai-6rah.vercel.app/)
+[![Backend Deployment](https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://nexchain-ai.onrender.com)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-NexChain--AI-181717?style=for-the-badge&logo=github)](https://github.com/void-shreya/NexChain-AI)
+
 An enterprise-grade, full-stack autonomous AI control tower application designed to detect supply chain disruptions, understand multi-tier consequences, predict delivery bottlenecks, simulate What-If scenarios, evaluate multi-criteria recovery options, make structured decisions, coordinate human-in-the-loop actions, monitor real-time recovery telemetry, and continuously learn.
+
+---
+
+## 🌐 Live Deployments & Cloud Endpoints
+
+| Component | Provider | Live URL | Description |
+| :--- | :--- | :--- | :--- |
+| **Frontend Web App** | **Vercel** | [https://nex-chain-ai-6rah.vercel.app/](https://nex-chain-ai-6rah.vercel.app/) | React 19 + Cyber-Command Glassmorphism UI + 3D Holographic Matrix + GIS Maps |
+| **Backend REST API** | **Render** | [https://nexchain-ai.onrender.com](https://nexchain-ai.onrender.com) | Node.js Express Server + Autonomous MCDA Agent Core + REST Services |
+| **API Health Check** | **Render** | [https://nexchain-ai.onrender.com/api/health](https://nexchain-ai.onrender.com/api/health) | Live JSON System Telemetry & DB Health Status |
+| **Source Code** | **GitHub** | [https://github.com/void-shreya/NexChain-AI](https://github.com/void-shreya/NexChain-AI) | Official Git Repository |
 
 ---
 

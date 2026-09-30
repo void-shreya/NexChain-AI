@@ -1,6 +1,10 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_WS_URL || 'http://localhost:5000';
+const isLocal = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const SOCKET_URL = import.meta.env.VITE_WS_URL || 
+  (isLocal ? 'http://localhost:5000' : 'https://nexchain-ai.onrender.com');
 
 class SocketService {
   constructor() {

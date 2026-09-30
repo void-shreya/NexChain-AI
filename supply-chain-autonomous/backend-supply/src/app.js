@@ -32,6 +32,7 @@ const createApp = () => {
 
   // Root status & landing page (for direct browser access to http://localhost:5000)
   app.get('/', (req, res) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'https://nex-chain-ai-6rah.vercel.app';
     if (req.accepts('html')) {
       res.send(`
         <!DOCTYPE html>
@@ -58,7 +59,7 @@ const createApp = () => {
               <span class="badge">● ONLINE</span>
             </div>
             <p>Enterprise AI Autonomous Supply Chain Control Tower & Decision Service is active.</p>
-            <a href="http://localhost:5173" class="btn">Launch Frontend Web App (Port 5173) ➔</a>
+            <a href="${frontendUrl}" class="btn" target="_blank">Launch Live Web Application (Vercel) ➔</a>
             <div class="endpoints">
               <p>Key Endpoints:</p>
               <ul>
@@ -77,7 +78,8 @@ const createApp = () => {
         status: 'ONLINE',
         name: 'SupplyChain Guardian Control Tower API',
         version: '2.4.0',
-        frontendUrl: 'http://localhost:5173',
+        frontendUrl,
+        deployedUrl: 'https://nexchain-ai.onrender.com',
       });
     }
   });

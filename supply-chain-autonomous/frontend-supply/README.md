@@ -1,6 +1,12 @@
 # SupplyChain Guardian - Frontend Web Application
 
+[![Frontend Deployment](https://img.shields.io/badge/Frontend-Vercel-black?style=for-the-badge&logo=vercel)](https://nex-chain-ai-6rah.vercel.app/)
+[![Backend Deployment](https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://nexchain-ai.onrender.com)
+
 High-performance, cyber-command control tower interface for autonomous supply chain disruption response.
+
+- **Live Production URL**: [https://nex-chain-ai-6rah.vercel.app/](https://nex-chain-ai-6rah.vercel.app/)
+- **Connected Backend**: [https://nexchain-ai.onrender.com/api](https://nexchain-ai.onrender.com/api)
 
 ## Tech Stack
 
