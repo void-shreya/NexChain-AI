@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { disruptionsApi, notificationsApi } from '../services/api';
 import { socketService } from '../services/socket';
+import {
+  subscribeToDisruptions,
+  subscribeToNotifications,
+  subscribeToDecisions,
+} from '../services/supabaseRealtime';
 import { useAuth } from './AuthContext';
 
 const DisruptionContext = createContext();
@@ -14,7 +19,7 @@ export const DisruptionProvider = ({ children }) => {
   const [toastMessage, setToastMessage] = useState(null);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(2);
 
-  // Load initial disruptions and listen for socket events
+  // Load initial disruptions and listen for socket + Supabase Realtime events
   useEffect(() => {
     const isAuthRoute =
       typeof window !== 'undefined' &&
@@ -25,7 +30,7 @@ export const DisruptionProvider = ({ children }) => {
       loadDisruptions();
     }
 
-    // Listen to real-time events
+    // 1. Socket.io listeners
     socketService.on('agent:step', (stepData) => {
       setCurrentAgentStep(stepData);
       setAgentStepLogs((prev) => {
@@ -54,10 +59,80 @@ export const DisruptionProvider = ({ children }) => {
       }
     });
 
+    // 2. Supabase Realtime: disruptions table (INSERT & UPDATE)
+    const unsubDisruptions = subscribeToDisruptions({
+      onInsert: (newDisruption) => {
+        console.log('⚡ [Realtime Disruption Context] New disruption inserted:', newDisruption);
+        showToast({
+          title: '🚨 CRITICAL DISRUPTION DETECTED (Realtime)',
+          message: newDisruption.title || 'New supply chain disruption detected.',
+          type: 'critical',
+        });
+        if (newDisruption.status === 'ACTIVE') {
+          setActiveDisruptions((prev) => {
+            const exists = prev.some((d) => d.id === newDisruption.id);
+            if (exists) return prev.map((d) => (d.id === newDisruption.id ? newDisruption : d));
+            return [newDisruption, ...prev];
+          });
+        }
+      },
+      onUpdate: (updatedDisruption, oldDisruption) => {
+        console.log('⚡ [Realtime Disruption Context] Disruption updated:', updatedDisruption);
+        if (updatedDisruption.status === 'RESOLVED') {
+          showToast({
+            title: '✅ DISRUPTION RESOLVED (Realtime)',
+            message: `${updatedDisruption.title || 'Incident'} has been resolved.`,
+            type: 'success',
+          });
+          setActiveDisruptions((prev) => prev.filter((d) => d.id !== updatedDisruption.id));
+        } else {
+          setActiveDisruptions((prev) =>
+            prev.map((d) => (d.id === updatedDisruption.id ? updatedDisruption : d))
+          );
+        }
+      },
+      onDelete: (deletedDisruption) => {
+        setActiveDisruptions((prev) => prev.filter((d) => d.id !== deletedDisruption.id));
+      },
+    });
+
+    // 3. Supabase Realtime: notifications table
+    const unsubNotifications = subscribeToNotifications({
+      onInsert: (newNotif) => {
+        console.log('🔔 [Realtime Notification]:', newNotif);
+        setUnreadNotificationCount((prev) => prev + 1);
+        if (newNotif.severity === 'CRITICAL' || newNotif.severity === 'HIGH') {
+          showToast({
+            title: `🔔 ${newNotif.title}`,
+            message: newNotif.message,
+            type: newNotif.severity === 'CRITICAL' ? 'critical' : 'warning',
+          });
+        }
+      },
+    });
+
+    // 4. Supabase Realtime: ai_decisions table
+    const unsubDecisions = subscribeToDecisions({
+      onUpdate: (updatedDecision) => {
+        if (updatedDecision.approval_status === 'APPROVED') {
+          showToast({
+            title: '🤖 DECISION APPROVED (Realtime)',
+            message: updatedDecision.selected_action_title || 'Autonomous recovery action authorized.',
+            type: 'success',
+          });
+          loadDisruptions();
+        }
+      },
+    });
+
+    // Unified cleanup on unmount
     return () => {
       socketService.off('agent:step');
       socketService.off('demo:disruption_triggered');
       socketService.off('dashboard:update');
+      unsubDisruptions();
+      unsubNotifications();
+      unsubDecisions();
     };
   }, []);
 

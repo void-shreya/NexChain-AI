@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { inventoryApi } from '../services/api';
 import { useDisruption } from '../context/DisruptionContext';
+import { subscribeToTable } from '../services/supabaseRealtime';
 
 export const InventoryPage = () => {
   const [inventory, setInventory] = useState([]);
@@ -24,6 +25,23 @@ export const InventoryPage = () => {
 
   useEffect(() => {
     loadInventory();
+
+    // Subscribe to inventory UPDATE events in real time
+    const unsubscribe = subscribeToTable({
+      table: 'inventory',
+      channelName: 'realtime-page-inventory-table',
+      event: 'UPDATE',
+      onUpdate: (updatedItem) => {
+        console.log('⚡ [InventoryPage Realtime UPDATE]:', updatedItem);
+        setInventory((prev) =>
+          prev.map((item) => (item.id === updatedItem.id ? { ...item, ...updatedItem } : item))
+        );
+      },
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [filterStatus]);
 
   const loadInventory = async () => {

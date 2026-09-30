@@ -11,6 +11,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { auditApi } from '../services/api';
+import { subscribeToTable } from '../services/supabaseRealtime';
 
 export const AuditLogPage = () => {
   const [logs, setLogs] = useState([]);
@@ -21,6 +22,21 @@ export const AuditLogPage = () => {
 
   useEffect(() => {
     loadAuditLogs();
+
+    // Subscribe to audit_logs INSERT events in real time
+    const unsubscribe = subscribeToTable({
+      table: 'audit_logs',
+      channelName: 'realtime-page-audit-logs-table',
+      event: 'INSERT',
+      onInsert: (newLog) => {
+        console.log('⚡ [AuditLogPage Realtime INSERT]:', newLog);
+        setLogs((prev) => [newLog, ...prev]);
+      },
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [categoryFilter]);
 
   const loadAuditLogs = async () => {

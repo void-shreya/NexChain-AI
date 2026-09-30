@@ -17,6 +17,7 @@ import {
 import { decisionsApi, agentApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useDisruption } from '../context/DisruptionContext';
+import { subscribeToTable } from '../services/supabaseRealtime';
 import { useNavigate } from 'react-router-dom';
 
 export const DecisionsPage = () => {
@@ -33,6 +34,34 @@ export const DecisionsPage = () => {
 
   useEffect(() => {
     loadDecisions();
+
+    // Subscribe to ai_decisions changes in real time
+    const unsubscribe = subscribeToTable({
+      table: 'ai_decisions',
+      channelName: 'realtime-page-ai-decisions-table',
+      event: '*',
+      onInsert: (newDec) => {
+        console.log('⚡ [DecisionsPage Realtime INSERT]:', newDec);
+        setDecisions((prev) => {
+          const exists = prev.some((d) => d.id === newDec.id);
+          if (exists) return prev.map((d) => (d.id === newDec.id ? newDec : d));
+          return [newDec, ...prev];
+        });
+      },
+      onUpdate: (updatedDec) => {
+        console.log('⚡ [DecisionsPage Realtime UPDATE]:', updatedDec);
+        setDecisions((prev) =>
+          prev.map((d) => (d.id === updatedDec.id ? { ...d, ...updatedDec } : d))
+        );
+      },
+      onDelete: (deletedDec) => {
+        setDecisions((prev) => prev.filter((d) => d.id !== deletedDec.id));
+      },
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const loadDecisions = async () => {

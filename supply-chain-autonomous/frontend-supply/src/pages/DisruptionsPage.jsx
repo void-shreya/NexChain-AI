@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { disruptionsApi } from '../services/api';
 import { useDisruption } from '../context/DisruptionContext';
+import { subscribeToTable } from '../services/supabaseRealtime';
 import { useNavigate } from 'react-router-dom';
 
 export const DisruptionsPage = () => {
@@ -26,6 +27,34 @@ export const DisruptionsPage = () => {
 
   useEffect(() => {
     loadDisruptions();
+
+    // Subscribe to real-time disruptions changes directly in the table view
+    const unsubscribe = subscribeToTable({
+      table: 'disruptions',
+      channelName: 'realtime-page-disruptions-table',
+      event: '*',
+      onInsert: (newRow) => {
+        console.log('⚡ [DisruptionsPage Realtime INSERT]:', newRow);
+        setDisruptions((prev) => {
+          const exists = prev.some((d) => d.id === newRow.id);
+          if (exists) return prev.map((d) => (d.id === newRow.id ? newRow : d));
+          return [newRow, ...prev];
+        });
+      },
+      onUpdate: (updatedRow) => {
+        console.log('⚡ [DisruptionsPage Realtime UPDATE]:', updatedRow);
+        setDisruptions((prev) =>
+          prev.map((d) => (d.id === updatedRow.id ? updatedRow : d))
+        );
+      },
+      onDelete: (deletedRow) => {
+        setDisruptions((prev) => prev.filter((d) => d.id !== deletedRow.id));
+      },
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const loadDisruptions = async () => {
