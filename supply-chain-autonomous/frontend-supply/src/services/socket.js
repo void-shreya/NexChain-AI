@@ -16,6 +16,7 @@ class SocketService {
         transports: ['websocket', 'polling'],
         reconnectionAttempts: 5,
         reconnectionDelay: 2000,
+        closeOnBeforeunload: true,
       });
 
       this.socket.on('connect', () => {
@@ -54,3 +55,17 @@ class SocketService {
 }
 
 export const socketService = new SocketService();
+
+if (typeof window !== 'undefined') {
+  // Cleanly close socket when browser navigates away or caches page in bfcache
+  window.addEventListener('pagehide', () => {
+    socketService.disconnect();
+  });
+
+  // Re-establish socket when page is restored from bfcache
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      socketService.connect();
+    }
+  });
+}

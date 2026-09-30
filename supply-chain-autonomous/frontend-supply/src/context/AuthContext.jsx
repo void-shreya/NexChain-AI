@@ -27,8 +27,18 @@ export const AuthProvider = ({ children }) => {
           setUser(null);
         }
       } else {
-        // Default demo auto-login as Supply Manager so hackathon judges can immediately test the app without typing!
-        quickLogin('SUPPLY_MANAGER');
+        const isAuthRoute =
+          window.location.pathname.startsWith('/login') ||
+          window.location.pathname.startsWith('/register');
+
+        // Only auto-login if directly accessing the main app and not on auth pages
+        if (!isAuthRoute) {
+          try {
+            await quickLogin('SUPPLY_MANAGER');
+          } catch (err) {
+            console.warn('Auto quick-login fallback:', err.message);
+          }
+        }
       }
       setLoading(false);
     };

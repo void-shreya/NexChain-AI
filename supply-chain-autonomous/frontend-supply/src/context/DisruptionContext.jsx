@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { disruptionsApi, notificationsApi } from '../services/api';
 import { socketService } from '../services/socket';
+import { useAuth } from './AuthContext';
 
 const DisruptionContext = createContext();
 
 export const DisruptionProvider = ({ children }) => {
+  const { user } = useAuth();
   const [activeDisruptions, setActiveDisruptions] = useState([]);
   const [isDemoRunning, setIsDemoRunning] = useState(false);
   const [currentAgentStep, setCurrentAgentStep] = useState(null);
@@ -14,7 +16,14 @@ export const DisruptionProvider = ({ children }) => {
 
   // Load initial disruptions and listen for socket events
   useEffect(() => {
-    loadDisruptions();
+    const isAuthRoute =
+      typeof window !== 'undefined' &&
+      (window.location.pathname.startsWith('/login') ||
+        window.location.pathname.startsWith('/register'));
+
+    if (!isAuthRoute || user) {
+      loadDisruptions();
+    }
 
     // Listen to real-time events
     socketService.on('agent:step', (stepData) => {

@@ -18,14 +18,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 errors
+// Handle 401 errors safely without disrupting auth pages
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
+    const isAuthRoute =
+      window.location.pathname.startsWith('/login') ||
+      window.location.pathname.startsWith('/register');
+
+    if (error.response?.status === 401 && !isAuthRoute) {
+      const hadToken = !!localStorage.getItem('supply_token');
       localStorage.removeItem('supply_token');
       localStorage.removeItem('supply_user');
-      window.location.href = '/login';
+      if (hadToken) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
