@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { agentApi, disruptionsApi, decisionsApi } from '../services/api';
 import { useDisruption } from '../context/DisruptionContext';
+import { HologramCore } from '../components/HologramCore';
 import { useNavigate } from 'react-router-dom';
 
 const defaultSteps = [
@@ -154,6 +155,74 @@ export const AIAgentPage = () => {
             </p>
           </div>
         )}
+      </div>
+
+      {/* 3D ANIMATED HOLOGRAPHIC COMMAND CHAMBER */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.2fr) minmax(280px, 1fr)', gap: '1.5rem', alignItems: 'stretch' }}>
+        <div>
+          <HologramCore />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div className="hologram-card">
+            <div className="hologram-bracket-tl" />
+            <div className="hologram-bracket-tr" />
+            <div className="hologram-bracket-bl" />
+            <div className="hologram-bracket-br" />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>
+                <Sparkles size={14} />
+                <span>3D NEURAL MCDA ENGINE</span>
+              </div>
+              <span className="badge badge-success">ONLINE</span>
+            </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+              Autonomous multi-criteria optimization matrix evaluating candidate options against strict SLA penalty schedules and supply buffer thresholds.
+            </p>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem' }}>
+              <span className="badge" style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38bdf8', fontSize: '0.65rem' }}>Delay: 40%</span>
+              <span className="badge" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', fontSize: '0.65rem' }}>Cost: 35%</span>
+              <span className="badge" style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#c084fc', fontSize: '0.65rem' }}>Risk: 25%</span>
+            </div>
+          </div>
+
+          <div className="hologram-card">
+            <div className="hologram-bracket-tl" />
+            <div className="hologram-bracket-tr" />
+            <div className="hologram-bracket-bl" />
+            <div className="hologram-bracket-br" />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: 700, color: isDemoRunning ? '#fbbf24' : '#10b981' }}>
+                <Activity size={14} />
+                <span>ACTIVE PIPELINE EXECUTION</span>
+              </div>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                {isDemoRunning ? 'RUNNING' : 'STANDBY'}
+              </span>
+            </div>
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              {currentAgentStep?.name || 'Step 10: Select Optimal Strategy (Option B)'}
+            </div>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+              {currentAgentStep?.detail || 'Ranked Option B highest (94.2/100). Auto-drafted PO-REC-901 for Bharat Silicon BLR.'}
+            </p>
+          </div>
+
+          <div className="hologram-card">
+            <div className="hologram-bracket-tl" />
+            <div className="hologram-bracket-tr" />
+            <div className="hologram-bracket-bl" />
+            <div className="hologram-bracket-br" />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem' }}>
+              <span style={{ color: 'var(--text-muted)' }}>AUTONOMOUS EXPENDITURE CEILING:</span>
+              <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>₹5,00,000 INR</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', marginTop: '0.35rem' }}>
+              <span style={{ color: 'var(--text-muted)' }}>REPRESENTATIVE CONFIDENCE:</span>
+              <span style={{ color: '#10b981', fontWeight: 700 }}>95.8% (HIGH)</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 15-STEP AGENTIC WORKFLOW PROGRESSION CONSOLE (Prompt Section 11 & 23) */}

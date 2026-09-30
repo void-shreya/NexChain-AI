@@ -14,6 +14,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { SupplyMap } from '../maps/SupplyMap';
+import { HologramCore } from '../components/HologramCore';
 import { suppliersApi, shipmentsApi, disruptionsApi, dashboardApi } from '../services/api';
 import { useDisruption } from '../context/DisruptionContext';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +25,7 @@ export const ControlTowerPage = () => {
   const [warehouses, setWarehouses] = useState([]);
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [displayMode, setDisplayMode] = useState('MAP'); // 'MAP' | 'HOLOGRAM'
   const { activeDisruptions } = useDisruption();
   const navigate = useNavigate();
 
@@ -161,7 +163,7 @@ export const ControlTowerPage = () => {
       <div style={{ display: 'grid', gridTemplateColumns: selectedEntity ? '2.2fr 1fr' : '1fr', gap: '1.5rem' }}>
         {/* Full Interactive Map */}
         <div className="glass-panel" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Active Nodes:</span>
               <span className="badge badge-info">{warehouses.length} Warehouses</span>
@@ -169,19 +171,40 @@ export const ControlTowerPage = () => {
               <span className="badge badge-warning">{shipments.length} Active Shipments</span>
               {activeDisruptions.length > 0 && <span className="badge badge-critical">1 Disruption Zone</span>}
             </div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              Click any node marker to inspect telemetry
-            </span>
+
+            {/* View Switcher: GIS Map vs 3D Holographic Core */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <button
+                onClick={() => setDisplayMode('MAP')}
+                className={`btn ${displayMode === 'MAP' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: '0.72rem', padding: '0.35rem 0.75rem' }}
+              >
+                🗺️ GIS Map
+              </button>
+              <button
+                onClick={() => setDisplayMode('HOLOGRAM')}
+                className={`btn ${displayMode === 'HOLOGRAM' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: '0.72rem', padding: '0.35rem 0.75rem' }}
+              >
+                🔮 3D Hologram Net
+              </button>
+            </div>
           </div>
 
-          <SupplyMap
-            suppliers={suppliers}
-            warehouses={warehouses}
-            shipments={shipments}
-            disruptions={activeDisruptions}
-            onSelectEntity={(entity) => setSelectedEntity(entity)}
-            height="580px"
-          />
+          {displayMode === 'MAP' ? (
+            <SupplyMap
+              suppliers={suppliers}
+              warehouses={warehouses}
+              shipments={shipments}
+              disruptions={activeDisruptions}
+              onSelectEntity={(entity) => setSelectedEntity(entity)}
+              height="580px"
+            />
+          ) : (
+            <div style={{ padding: '0.5rem 0' }}>
+              <HologramCore compact={false} />
+            </div>
+          )}
         </div>
 
         {/* Selected Entity Inspector Panel */}
