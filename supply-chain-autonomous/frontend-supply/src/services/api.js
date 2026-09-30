@@ -1,13 +1,30 @@
 import axios from 'axios';
 
-const isLocal = typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+// Dynamically determine the backend URL based on runtime browser location
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  (isLocal ? 'http://localhost:5000/api' : 'https://nexchain-ai.onrender.com/api');
+    // If deployed on Vercel or any non-localhost host, NEVER use localhost:5000!
+    if (!isLocalhost) {
+      const configured = import.meta.env.VITE_API_URL;
+      if (configured && !configured.includes('localhost') && !configured.includes('127.0.0.1')) {
+        return configured;
+      }
+      return 'https://nexchain-ai.onrender.com/api';
+    }
+  }
+
+  return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+console.log('🔗 API Base URL resolved to:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 45000, // 45 seconds to gracefully accommodate Render free-tier cold starts
   headers: {
     'Content-Type': 'application/json',
   },
@@ -22,14 +39,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 errors safely without disrupting auth pages
+// Handle errors safely with user-friendly network diagnostics
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const isAuthRoute =
-      window.location.pathname.startsWith('/login') ||
-      window.location.pathname.startsWith('/register');
+      typeof window !== 'undefined' &&
+      (window.location.pathname.startsWith('/login') ||
+        window.location.pathname.startsWith('/register'));
 
+    // Handle 401 unauthorized
     if (error.response?.status === 401 && !isAuthRoute) {
       const hadToken = !!localStorage.getItem('supply_token');
       localStorage.removeItem('supply_token');
@@ -38,6 +57,12 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+
+    // Enhance Network Error messages (e.g. during cold starts or network drops)
+    if (!error.response && error.message === 'Network Error') {
+      error.message = 'Unable to reach backend service. The server may be waking up from cold sleep (please wait 10-15s and retry) or check internet connection.';
+    }
+
     return Promise.reject(error);
   }
 );

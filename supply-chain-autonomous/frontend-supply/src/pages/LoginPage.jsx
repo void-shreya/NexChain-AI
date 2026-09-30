@@ -20,6 +20,14 @@ export const LoginPage = () => {
   const { login, quickLogin } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Proactively wake up cloud backend (e.g. Render spin-down) as soon as user opens page
+    const backendUrl = typeof window !== 'undefined' && !window.location.hostname.includes('localhost')
+      ? 'https://nexchain-ai.onrender.com/api'
+      : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api');
+    fetch(`${backendUrl}/health`, { method: 'GET' }).catch(() => {});
+  }, []);
+
   const handleCardMouseMove = (e) => {
     if (!cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();

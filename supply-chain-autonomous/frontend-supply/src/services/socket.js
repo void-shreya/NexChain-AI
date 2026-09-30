@@ -1,10 +1,22 @@
 import { io } from 'socket.io-client';
 
-const isLocal = typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const getSocketUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0';
 
-const SOCKET_URL = import.meta.env.VITE_WS_URL || 
-  (isLocal ? 'http://localhost:5000' : 'https://nexchain-ai.onrender.com');
+    if (!isLocalhost) {
+      const configuredWs = import.meta.env.VITE_WS_URL;
+      if (configuredWs && !configuredWs.includes('localhost') && !configuredWs.includes('127.0.0.1')) {
+        return configuredWs;
+      }
+      return 'https://nexchain-ai.onrender.com';
+    }
+  }
+  return import.meta.env.VITE_WS_URL || 'http://localhost:5000';
+};
+
+const SOCKET_URL = getSocketUrl();
 
 class SocketService {
   constructor() {

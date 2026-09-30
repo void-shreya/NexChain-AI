@@ -25,7 +25,32 @@ const createApp = () => {
 
   // Global Middlewares
   app.use(helmet({ contentSecurityPolicy: false }));
-  app.use(cors({ origin: '*', credentials: true }));
+  
+  // Dynamic CORS configuration: Reflects caller origin to satisfy browser credentials specification
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+        if (!origin) return callback(null, true);
+        // Allow any Vercel deployment (*.vercel.app), localhost, or Render
+        if (
+          origin.endsWith('.vercel.app') ||
+          origin.includes('localhost') ||
+          origin.includes('127.0.0.1') ||
+          origin.includes('onrender.com')
+        ) {
+          return callback(null, true);
+        }
+        return callback(null, true);
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+      exposedHeaders: ['Authorization'],
+    })
+  );
+  app.options('*', cors());
+
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(morgan('dev'));
