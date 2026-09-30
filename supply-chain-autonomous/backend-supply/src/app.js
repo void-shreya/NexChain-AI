@@ -122,6 +122,35 @@ const createApp = () => {
     });
   });
 
+  // API Root Index & Service Discovery Endpoint
+  app.get(['/api', '/api/'], (req, res) => {
+    res.json({
+      success: true,
+      message: 'SupplyChain Guardian Autonomous Control Tower API is ONLINE',
+      version: '2.4.0',
+      databaseMode: db.isSupabaseConnected() ? 'SUPABASE_POSTGRES' : 'AUTONOMOUS_PERSISTENT_MEMORY',
+      liveAppUrl: 'https://nex-chain-ai-6rah.vercel.app',
+      endpoints: {
+        health: 'GET /api/health',
+        auth: {
+          login: 'POST /api/auth/login',
+          register: 'POST /api/auth/register',
+          me: 'GET /api/auth/me',
+        },
+        dashboard: 'GET /api/dashboard',
+        disruptions: 'GET /api/disruptions',
+        suppliers: 'GET /api/suppliers',
+        inventory: 'GET /api/inventory',
+        orders: 'GET /api/orders',
+        shipments: 'GET /api/shipments',
+        decisions: 'GET /api/decisions',
+        simulation: 'POST /api/simulation/run',
+        auditLogs: 'GET /api/audit-logs',
+        notifications: 'GET /api/notifications',
+      },
+    });
+  });
+
   // Demo Reset endpoint
   app.post('/api/demo/reset', (req, res) => {
     db.resetDemoData();
