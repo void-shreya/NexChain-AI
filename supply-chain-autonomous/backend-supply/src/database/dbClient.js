@@ -209,12 +209,16 @@ const db = {
 
   // Audit Logs
   getAuditLogs: async (limit = 100) => {
-    return memory.auditLogs.slice(0, limit);
+    return memory.auditLogs.slice(0, limit).map((l) => ({
+      ...l,
+      user_name: l.user_name || 'SupplyChain Guardian AI',
+    }));
   },
   createAuditLog: async (log) => {
     const newLog = {
       id: `aud-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       timestamp: new Date().toISOString(),
+      user_name: log.user_name || 'SupplyChain Guardian AI',
       result_status: 'SUCCESS',
       ...log,
     };

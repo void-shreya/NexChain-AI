@@ -172,6 +172,8 @@ class SupplyChainGuardian {
 
     // Create Audit Log
     await db.createAuditLog({
+      user_name: 'SupplyChain Guardian AI',
+      agent_id: 'Guardian-Autonomous-Agent-01',
       event_category: 'AI_DECISION',
       event_name: 'Autonomous 15-Step Disruption Analysis',
       input_context_summary: `Disruption "${disruption.title}" analyzed across ${affectedOrders.length} orders.`,

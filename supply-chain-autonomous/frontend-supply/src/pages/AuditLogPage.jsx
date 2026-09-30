@@ -40,9 +40,9 @@ export const AuditLogPage = () => {
   };
 
   const filtered = logs.filter((l) =>
-    l.event_name.toLowerCase().includes(search.toLowerCase()) ||
-    l.input_context_summary.toLowerCase().includes(search.toLowerCase()) ||
-    (l.user_name && l.user_name.toLowerCase().includes(search.toLowerCase()))
+    (l.event_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (l.input_context_summary || '').toLowerCase().includes(search.toLowerCase()) ||
+    ((l.user_name || l.agent_id || '').toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -126,7 +126,11 @@ export const AuditLogPage = () => {
           </thead>
           <tbody>
             {filtered.map((log) => {
-              const isAI = log.user_name.includes('Guardian') || log.user_name.includes('AI');
+              const actorName = log.user_name || log.agent_id || 'SupplyChain Guardian AI';
+              const isAI =
+                actorName.toLowerCase().includes('guardian') ||
+                actorName.toLowerCase().includes('agent') ||
+                actorName.toLowerCase().includes('ai');
               const isApproved = log.approval_status === 'APPROVED' || log.approval_status === 'AUTO_EXECUTED';
 
               return (
@@ -141,7 +145,7 @@ export const AuditLogPage = () => {
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', fontWeight: 600 }}>
                       {isAI ? <Bot size={14} color="var(--accent-cyan)" /> : <UserCheck size={14} color="#10b981" />}
-                      <span>{log.user_name}</span>
+                      <span>{actorName}</span>
                     </div>
                   </td>
                   <td>
@@ -190,7 +194,7 @@ export const AuditLogPage = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.82rem' }}>
               <div><b>Record ID:</b> <span style={{ color: 'var(--accent-cyan)' }}>{selectedLog.id}</span></div>
               <div><b>Timestamp:</b> {new Date(selectedLog.timestamp).toLocaleString()}</div>
-              <div><b>Authorized Actor:</b> {selectedLog.user_name} ({selectedLog.agent_id || 'System'})</div>
+              <div><b>Authorized Actor:</b> {selectedLog.user_name || selectedLog.agent_id || 'SupplyChain Guardian AI'} ({selectedLog.agent_id || 'System'})</div>
               <div><b>Event:</b> {selectedLog.event_name}</div>
               <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
                 <b>Input Context Snapshot:</b>

@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const auditController = require('../controllers/auditController');
-const { authenticate } = require('../middleware/authMiddleware');
+const { optionalAuthenticate } = require('../middleware/authMiddleware');
 
-router.get('/', authenticate, auditController.getAuditLogs);
+router.get('/', optionalAuthenticate, auditController.getAuditLogs);
 
 module.exports = router;
