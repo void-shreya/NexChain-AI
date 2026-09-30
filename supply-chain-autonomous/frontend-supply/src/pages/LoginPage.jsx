@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Bot, Lock, Mail, ArrowRight, ShieldCheck, Zap, Eye, EyeOff, UserCheck, KeyRound } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
