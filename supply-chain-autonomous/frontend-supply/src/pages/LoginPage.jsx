@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, Lock, Mail, ArrowRight, ShieldCheck, Zap, Eye, EyeOff, UserCheck, KeyRound } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Zap, Eye, EyeOff, UserCheck, KeyRound } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Auth3DBackground } from '../components/Auth3DBackground';
