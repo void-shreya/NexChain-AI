@@ -88,6 +88,8 @@ export const RegisterPage = () => {
     }
   };
 
+  const [activePlaceId, setActivePlaceId] = useState('PUNE');
+
   return (
     <div
       style={{
@@ -101,7 +103,7 @@ export const RegisterPage = () => {
       }}
     >
       {/* 3D Interactive Cyber Space Parallax Canvas Background */}
-      <Auth3DBackground />
+      <Auth3DBackground activePlaceId={activePlaceId} />
 
       {/* Main Split-Screen Container */}
       <div
@@ -118,7 +120,7 @@ export const RegisterPage = () => {
       >
         {/* Left Side: 3D Holographic Spatial Core & Live Corridors Telemetry */}
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Auth3DHeroCore />
+          <Auth3DHeroCore selectedPlaceId={activePlaceId} onSelectPlace={(p) => setActivePlaceId(p.id)} />
         </div>
 
         {/* Right Side: Interactive 3D Cyber Registration Terminal */}

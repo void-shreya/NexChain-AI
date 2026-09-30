@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
+import { SPATIAL_PLACES, SPATIAL_EDGES } from '../utils/spatialPlaces';
 
-export const Auth3DBackground = () => {
+export const Auth3DBackground = ({ activePlaceId = 'PUNE' }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -27,23 +28,6 @@ export const Auth3DBackground = () => {
     };
     window.addEventListener('mousemove', handleMouseMove);
 
-    // 3D Nodes representing the India Logistics Mesh
-    const nodes = [
-      { name: 'DEL', x: -80, y: -140, z: 20, color: '#38bdf8' },
-      { name: 'PUN', x: -50, y: 10, z: -30, color: '#06b6d4' },
-      { name: 'BOM', x: -90, y: 30, z: 40, color: '#a855f7' },
-      { name: 'BLR', x: 20, y: 120, z: -50, color: '#10b981' },
-      { name: 'MAA', x: 70, y: 130, z: 25, color: '#f59e0b' },
-      { name: 'HYD', x: 10, y: 50, z: -10, color: '#06b6d4' },
-      { name: 'CCU', x: 140, y: -40, z: 60, color: '#38bdf8' },
-      { name: 'AMD', x: -130, y: -50, z: -20, color: '#6366f1' },
-    ];
-
-    // Connecting supply chain transit edges
-    const edges = [
-      [0, 1], [1, 2], [1, 5], [5, 3], [3, 4], [0, 6], [6, 4], [0, 7], [7, 2], [5, 0]
-    ];
-
     // Ambient floating 3D particle dust
     const particles = Array.from({ length: 65 }, () => ({
       x: (Math.random() - 0.5) * 600,
@@ -57,7 +41,7 @@ export const Auth3DBackground = () => {
     }));
 
     let rotY = 0;
-    let rotX = 0;
+    let pulse = 0;
 
     const render = () => {
       ctx.clearRect(0, 0, width, height);
@@ -67,8 +51,15 @@ export const Auth3DBackground = () => {
       mouse.y += (mouse.targetY - mouse.y) * 0.05;
 
       rotY += 0.003;
-      const curRotY = rotY + mouse.x * 0.6;
-      const curRotX = Math.sin(rotY * 0.5) * 0.15 + mouse.y * 0.5;
+      pulse += 0.05;
+
+      // Find active place to calculate camera target angle
+      const activePlace = SPATIAL_PLACES.find((p) => p.id === activePlaceId) || SPATIAL_PLACES[0];
+      const targetAngleY = activePlace ? -Math.atan2(activePlace.z, activePlace.x) * 0.25 : 0;
+      const targetAngleX = activePlace ? (activePlace.y / 200) * 0.15 : 0;
+
+      const curRotY = rotY + targetAngleY + mouse.x * 0.6;
+      const curRotX = Math.sin(rotY * 0.5) * 0.12 + targetAngleX + mouse.y * 0.5;
 
       const cosY = Math.cos(curRotY);
       const sinY = Math.sin(curRotY);
@@ -101,9 +92,9 @@ export const Auth3DBackground = () => {
       // 1. Draw 3D Orbiting Rings (Gyroscope Field)
       ctx.save();
       for (let ring = 1; ring <= 3; ring++) {
-        const radius = ring * 110;
+        const radius = ring * 115;
         ctx.beginPath();
-        ctx.strokeStyle = ring === 2 ? 'rgba(168, 85, 247, 0.18)' : 'rgba(6, 182, 212, 0.16)';
+        ctx.strokeStyle = ring === 2 ? 'rgba(168, 85, 247, 0.18)' : 'rgba(6, 182, 212, 0.15)';
         ctx.lineWidth = 1;
         const ringStep = 0.15;
         for (let a = 0; a <= Math.PI * 2 + ringStep; a += ringStep) {
@@ -137,57 +128,98 @@ export const Auth3DBackground = () => {
         }
       });
 
-      // 3. Draw Connecting Supply Vectors
-      const projectedNodes = nodes.map((n) => ({ ...project(n.x, n.y, n.z), ...n }));
+      // 3. Project All Places to 2D
+      const projectedPlaces = SPATIAL_PLACES.map((p) => ({
+        ...p,
+        proj: project(p.x * 1.8, p.y * 1.8, p.z * 1.8),
+      }));
 
-      edges.forEach(([i, j]) => {
-        const p1 = projectedNodes[i];
-        const p2 = projectedNodes[j];
-        if (p1.scale > 0 && p2.scale > 0) {
-          const grad = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
-          grad.addColorStop(0, 'rgba(6, 182, 212, 0.28)');
-          grad.addColorStop(1, 'rgba(168, 85, 247, 0.28)');
+      // 4. Draw Connecting 3D Corridors
+      SPATIAL_EDGES.forEach((edge) => {
+        const p1 = projectedPlaces.find((n) => n.id === edge.from);
+        const p2 = projectedPlaces.find((n) => n.id === edge.to);
+
+        if (p1 && p2 && p1.proj.scale > 0 && p2.proj.scale > 0) {
+          const isConnectedToActive = p1.id === activePlaceId || p2.id === activePlaceId;
 
           ctx.beginPath();
-          ctx.strokeStyle = grad;
-          ctx.lineWidth = 1.2;
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
+          ctx.strokeStyle = isConnectedToActive
+            ? (edge.isAir ? 'rgba(56, 189, 248, 0.7)' : 'rgba(6, 182, 212, 0.65)')
+            : 'rgba(6, 182, 212, 0.16)';
+          ctx.lineWidth = isConnectedToActive ? 1.8 : 1;
+
+          if (edge.isAir) {
+            ctx.setLineDash([4, 4]);
+          } else {
+            ctx.setLineDash([]);
+          }
+
+          ctx.moveTo(p1.proj.x, p1.proj.y);
+          ctx.lineTo(p2.proj.x, p2.proj.y);
           ctx.stroke();
+          ctx.setLineDash([]);
 
-          // Traveling data pulse particle along vector
-          const progress = (Math.sin(rotY * 4 + i + j) + 1) / 2;
-          const px = p1.x + (p2.x - p1.x) * progress;
-          const py = p1.y + (p2.y - p1.y) * progress;
-          ctx.beginPath();
-          ctx.fillStyle = '#38bdf8';
-          ctx.arc(px, py, 2.5, 0, Math.PI * 2);
-          ctx.fill();
+          // Traveling data pulse particle along active vector
+          if (isConnectedToActive) {
+            const progress = (Math.sin(rotY * 4 + p1.lat) + 1) / 2;
+            const px = p1.proj.x + (p2.proj.x - p1.proj.x) * progress;
+            const py = p1.proj.y + (p2.proj.y - p1.proj.y) * progress;
+            ctx.beginPath();
+            ctx.fillStyle = edge.isAir ? '#38bdf8' : '#10b981';
+            ctx.arc(px, py, 2.8, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
       });
 
-      // 4. Draw 3D Hub Nodes
-      projectedNodes.forEach((n) => {
-        if (n.scale > 0) {
-          // Outer glow ring
+      // 5. Draw 3D Places Nodes
+      projectedPlaces.forEach((n) => {
+        if (n.proj.scale > 0) {
+          const isSelected = n.id === activePlaceId;
+          const nodeColor = n.id === 'PUNE' ? '#f43f5e' : (n.nominalColor || n.color);
+
+          // If active place: draw expanding radar ring
+          if (isSelected) {
+            ctx.beginPath();
+            const ringSize = (14 + Math.sin(pulse * 3) * 5) * n.proj.scale;
+            ctx.arc(n.proj.x, n.proj.y, ringSize, 0, Math.PI * 2);
+            ctx.strokeStyle = nodeColor;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Vertical 3D beacon light column
+            const topBeacon = project(n.x * 1.8, n.y * 1.8 - 60, n.z * 1.8);
+            const beaconGrad = ctx.createLinearGradient(n.proj.x, n.proj.y, topBeacon.x, topBeacon.y);
+            beaconGrad.addColorStop(0, `${nodeColor}aa`);
+            beaconGrad.addColorStop(1, 'transparent');
+
+            ctx.beginPath();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = beaconGrad;
+            ctx.moveTo(n.proj.x, n.proj.y);
+            ctx.lineTo(topBeacon.x, topBeacon.y);
+            ctx.stroke();
+          }
+
+          // Outer halo
           ctx.beginPath();
-          ctx.arc(n.x, n.y, 10 * n.scale, 0, Math.PI * 2);
-          ctx.fillStyle = `${n.color}22`;
+          ctx.arc(n.proj.x, n.proj.y, (isSelected ? 12 : 7) * n.proj.scale, 0, Math.PI * 2);
+          ctx.fillStyle = `${nodeColor}33`;
           ctx.fill();
 
           // Core node
           ctx.beginPath();
-          ctx.arc(n.x, n.y, 4 * n.scale, 0, Math.PI * 2);
-          ctx.fillStyle = n.color;
-          ctx.shadowColor = n.color;
-          ctx.shadowBlur = 10;
+          ctx.arc(n.proj.x, n.proj.y, (isSelected ? 5.5 : 3.5) * n.proj.scale, 0, Math.PI * 2);
+          ctx.fillStyle = nodeColor;
+          ctx.shadowColor = nodeColor;
+          ctx.shadowBlur = isSelected ? 16 : 8;
           ctx.fill();
           ctx.shadowBlur = 0;
 
           // Node Label
-          ctx.font = `${Math.max(9, Math.round(11 * n.scale))}px monospace`;
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-          ctx.fillText(n.name, n.x + 8 * n.scale, n.y + 3);
+          ctx.font = `${isSelected ? 'bold 11px' : '9px'} monospace`;
+          ctx.fillStyle = isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.7)';
+          ctx.fillText(n.code, n.proj.x + 8 * n.proj.scale, n.proj.y + 3);
         }
       });
 
@@ -201,7 +233,7 @@ export const Auth3DBackground = () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
     };
-  }, []);
+  }, [activePlaceId]);
 
   return (
     <div
@@ -225,7 +257,6 @@ export const Auth3DBackground = () => {
           display: 'block',
         }}
       />
-      {/* Cyber Scanlines Overlay */}
       <div className="hologram-scanlines" />
     </div>
   );

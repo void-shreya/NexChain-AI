@@ -1,38 +1,83 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bot, Zap, AlertTriangle, ShieldCheck, Activity, Eye, Radio, Sparkles } from 'lucide-react';
+import { Bot, Zap, AlertTriangle, ShieldCheck, Activity, Eye, Radio, Sparkles, Navigation, MapPin, Compass } from 'lucide-react';
 import { useDisruption } from '../context/DisruptionContext';
+import { SPATIAL_PLACES, SPATIAL_EDGES } from '../utils/spatialPlaces';
 
-export const HologramCore = ({ title = 'Guardian 3D Holographic Core', compact = false }) => {
+export const HologramCore = ({
+  title = 'Guardian 3D Holographic Core',
+  selectedPlaceId = null,
+  onSelectPlace = null,
+  compact = false,
+}) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
-  const { activeDisruptions, isDemoRunning, currentAgentStep } = useDisruption();
+  const { activeDisruptions } = useDisruption();
 
-  const [mode, setMode] = useState('MESH'); // 'MESH', 'RADAR', 'CORE'
+  const [activeId, setActiveId] = useState(selectedPlaceId || 'PUNE');
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [hoveredNode, setHoveredNode] = useState(null);
+
   const isDisrupted = activeDisruptions.length > 0;
 
-  // 3D Nodes for the Supply Chain Holographic Projection
-  const nodes = [
-    { name: 'PUN', label: 'Pune Hub', x: 20, y: -10, z: 30, color: isDisrupted ? '#f43f5e' : '#06b6d4', size: 4 },
-    { name: 'BLR', label: 'Bharat Silicon BLR', x: 40, y: 35, z: -20, color: '#10b981', size: 3.5 },
-    { name: 'BOM', label: 'Bhiwandi Depot', x: -30, y: -25, z: 15, color: '#38bdf8', size: 3.5 },
-    { name: 'DEL', label: 'NCR North Hub', x: -10, y: -70, z: -30, color: '#8b5cf6', size: 3.5 },
-    { name: 'MAA', label: 'Chennai Port', x: 50, y: 45, z: 35, color: '#f59e0b', size: 3.5 },
-    { name: 'HYD', label: 'Shamshabad Hub', x: 15, y: 15, z: -40, color: '#06b6d4', size: 3 },
-    { name: 'CORE', label: 'Guardian AI Kernel', x: 0, y: 0, z: 0, color: isDisrupted ? '#f43f5e' : '#38bdf8', size: 6 },
-  ];
+  // Sync external selectedPlaceId if changed
+  useEffect(() => {
+    if (selectedPlaceId) {
+      setActiveId(selectedPlaceId);
+    }
+  }, [selectedPlaceId]);
 
-  // Mouse tilt interaction for true 3D perspective
+  const currentPlace = SPATIAL_PLACES.find((p) => p.id === activeId) || SPATIAL_PLACES[0];
+
+  const handlePlaceClick = (place) => {
+    setActiveId(place.id);
+    if (onSelectPlace) {
+      onSelectPlace(place);
+    }
+  };
+
+  // Mouse tilt interaction for 3D perspective
   const handleMouseMove = (e) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setTilt({ x: y * 25, y: -x * 25 });
+    setTilt({ x: y * 20, y: -x * 20 });
+
+    // Check hit testing with projected 2D nodes
+    const canvas = canvasRef.current;
+    if (!canvas || !canvas._projectedNodes) return;
+    const canvasRect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - canvasRect.left;
+    const mouseY = e.clientY - canvasRect.top;
+
+    const hit = canvas._projectedNodes.find((n) => {
+      const dist = Math.hypot(n.proj.x - mouseX, n.proj.y - mouseY);
+      return dist < 18;
+    });
+
+    setHoveredNode(hit ? hit.id : null);
   };
 
   const handleMouseLeave = () => {
     setTilt({ x: 0, y: 0 });
+    setHoveredNode(null);
+  };
+
+  const handleCanvasClick = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !canvas._projectedNodes) return;
+    const canvasRect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - canvasRect.left;
+    const mouseY = e.clientY - canvasRect.top;
+
+    const hit = canvas._projectedNodes.find((n) => {
+      const dist = Math.hypot(n.proj.x - mouseX, n.proj.y - mouseY);
+      return dist < 22;
+    });
+
+    if (hit) {
+      handlePlaceClick(hit);
+    }
   };
 
   useEffect(() => {
@@ -45,11 +90,15 @@ export const HologramCore = ({ title = 'Guardian 3D Holographic Core', compact =
     let angleY = 0;
     let pulse = 0;
 
+    // Camera target angles when a place is selected
+    let targetAngleY = 0;
+    let targetAngleX = 0;
+
     // Generate orbiting particle dust
-    const particles = Array.from({ length: 45 }, () => ({
+    const particles = Array.from({ length: 40 }, () => ({
       theta: Math.random() * Math.PI * 2,
       phi: (Math.random() - 0.5) * Math.PI,
-      radius: 60 + Math.random() * 55,
+      radius: 65 + Math.random() * 55,
       speed: 0.015 + Math.random() * 0.02,
       size: 1 + Math.random() * 1.5,
       alpha: 0.3 + Math.random() * 0.7,
@@ -60,28 +109,39 @@ export const HologramCore = ({ title = 'Guardian 3D Holographic Core', compact =
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
 
-      angleX += 0.008;
-      angleY += 0.012;
-      pulse += 0.04;
+      pulse += 0.05;
 
-      const cosX = Math.cos(angleX);
-      const sinX = Math.sin(angleX);
-      const cosY = Math.cos(angleY);
-      const sinY = Math.sin(angleY);
+      // Base rotation + subtle camera focus bias based on current place
+      angleX += 0.005;
+      angleY += 0.008;
+
+      // Calculate place angular bias
+      if (currentPlace) {
+        const placeAngle = Math.atan2(currentPlace.z, currentPlace.x);
+        targetAngleY = -placeAngle * 0.3;
+        targetAngleX = (currentPlace.y / 200) * 0.2;
+      }
+
+      const curAngleX = angleX * 0.4 + targetAngleX + tilt.x * 0.02;
+      const curAngleY = angleY + targetAngleY + tilt.y * 0.02;
+
+      const cosX = Math.cos(curAngleX);
+      const sinX = Math.sin(curAngleX);
+      const cosY = Math.cos(curAngleY);
+      const sinY = Math.sin(curAngleY);
 
       // Project 3D coordinate to 2D
       const project = (x, y, z) => {
-        // Rotate around Y axis
+        // Rotate around Y
         const x1 = x * cosY - z * sinY;
         const z1 = z * cosY + x * sinY;
 
-        // Rotate around X axis
+        // Rotate around X
         const y2 = y * cosX - z1 * sinX;
         const z2 = z1 * cosX + y * sinX;
 
-        // Perspective scale
-        const fov = 280;
-        const scale = fov / (fov + z2);
+        const fov = 260;
+        const scale = fov / (fov + z2 + 180);
         return {
           x: centerX + x1 * scale,
           y: centerY + y2 * scale,
@@ -92,13 +152,13 @@ export const HologramCore = ({ title = 'Guardian 3D Holographic Core', compact =
 
       // 1. Draw 3D Holographic Grid Radar Floor
       ctx.save();
-      ctx.strokeStyle = isDisrupted ? 'rgba(244, 63, 94, 0.18)' : 'rgba(6, 182, 212, 0.18)';
+      ctx.strokeStyle = isDisrupted ? 'rgba(244, 63, 94, 0.16)' : 'rgba(6, 182, 212, 0.16)';
       ctx.lineWidth = 1;
       const gridRadius = 90;
-      for (let r = 25; r <= gridRadius; r += 25) {
+      for (let r = 30; r <= gridRadius; r += 30) {
         ctx.beginPath();
         for (let a = 0; a <= Math.PI * 2; a += 0.2) {
-          const pt = project(Math.cos(a) * r, 55, Math.sin(a) * r);
+          const pt = project(Math.cos(a) * r, 50, Math.sin(a) * r);
           if (a === 0) ctx.moveTo(pt.x, pt.y);
           else ctx.lineTo(pt.x, pt.y);
         }
@@ -121,208 +181,381 @@ export const HologramCore = ({ title = 'Guardian 3D Holographic Core', compact =
           ctx.fillStyle = isDisrupted
             ? `rgba(251, 113, 133, ${p.alpha * pt.scale})`
             : `rgba(56, 189, 248, ${p.alpha * pt.scale})`;
-          ctx.shadowBlur = 8;
-          ctx.shadowColor = isDisrupted ? '#f43f5e' : '#06b6d4';
           ctx.fill();
         }
       });
 
-      // 3. Draw Connecting 3D Holographic Supply Vectors
-      const projectedNodes = nodes.map((node) => ({
-        ...node,
-        proj: project(node.x, node.y, node.z),
+      // 3. Project All Spatial Places to 2D
+      const projectedNodes = SPATIAL_PLACES.map((p) => ({
+        ...p,
+        proj: project(p.x, p.y, p.z),
       }));
 
-      // Connect peripheral nodes to central core and neighbors
-      ctx.lineWidth = 1.2;
-      for (let i = 0; i < projectedNodes.length; i++) {
-        for (let j = i + 1; j < projectedNodes.length; j++) {
-          const n1 = projectedNodes[i];
-          const n2 = projectedNodes[j];
-          const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y, n1.z - n2.z);
+      // Cache for mouse hit testing
+      canvas._projectedNodes = projectedNodes;
 
-          if (dist < 90 || n1.name === 'CORE' || n2.name === 'CORE') {
-            const grad = ctx.createLinearGradient(n1.proj.x, n1.proj.y, n2.proj.x, n2.proj.y);
-            const alertColor = isDisrupted ? 'rgba(244, 63, 94, 0.45)' : 'rgba(6, 182, 212, 0.45)';
-            grad.addColorStop(0, n1.color + 'aa');
-            grad.addColorStop(1, n2.color + 'aa');
+      // 4. Draw Connecting 3D Corridors (Edges)
+      SPATIAL_EDGES.forEach((edge) => {
+        const fromNode = projectedNodes.find((n) => n.id === edge.from);
+        const toNode = projectedNodes.find((n) => n.id === edge.to);
 
-            ctx.beginPath();
-            ctx.moveTo(n1.proj.x, n1.proj.y);
-            ctx.lineTo(n2.proj.x, n2.proj.y);
-            ctx.strokeStyle = grad;
-            ctx.shadowBlur = isDisrupted ? 12 : 8;
-            ctx.shadowColor = isDisrupted ? '#f43f5e' : '#06b6d4';
-            ctx.stroke();
+        if (fromNode && toNode && fromNode.proj.scale > 0 && toNode.proj.scale > 0) {
+          const isConnectedToActive = fromNode.id === activeId || toNode.id === activeId;
 
-            // Animated packet pulse flowing along vectors
-            const packetPos = (pulse * 0.4 + (i + j) * 0.2) % 1;
-            const px = n1.proj.x + (n2.proj.x - n1.proj.x) * packetPos;
-            const py = n1.proj.y + (n2.proj.y - n1.proj.y) * packetPos;
-            ctx.beginPath();
-            ctx.arc(px, py, 2 * n1.proj.scale, 0, Math.PI * 2);
-            ctx.fillStyle = '#ffffff';
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 10;
-            ctx.fill();
-          }
-        }
-      }
-
-      // 4. Draw 3D Holographic Nodes & Labels
-      projectedNodes.sort((a, b) => b.proj.z - a.proj.z);
-      projectedNodes.forEach((node) => {
-        const pt = node.proj;
-        const pulseSize = node.name === 'CORE' ? Math.sin(pulse) * 2 : 0;
-        const radius = Math.max(2, (node.size + pulseSize) * pt.scale);
-
-        // Outer glow aura
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, radius * 1.8, 0, Math.PI * 2);
-        ctx.fillStyle = node.color + '33';
-        ctx.fill();
-
-        // Node center
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = node.color;
-        ctx.shadowColor = node.color;
-        ctx.shadowBlur = 15;
-        ctx.fill();
-
-        // Target bracket around core node
-        if (node.name === 'CORE') {
-          ctx.strokeStyle = isDisrupted ? '#f43f5e' : '#38bdf8';
-          ctx.lineWidth = 1.5;
           ctx.beginPath();
-          ctx.arc(pt.x, pt.y, radius * 2.4, 0, Math.PI * 2);
-          ctx.setLineDash([4, 4]);
+          ctx.lineWidth = isConnectedToActive ? 2 : 1;
+
+          if (isConnectedToActive) {
+            ctx.strokeStyle = edge.isAir ? 'rgba(56, 189, 248, 0.85)' : 'rgba(6, 182, 212, 0.75)';
+            if (edge.isAir) {
+              ctx.setLineDash([4, 4]);
+            } else {
+              ctx.setLineDash([]);
+            }
+          } else {
+            ctx.strokeStyle = 'rgba(6, 182, 212, 0.18)';
+            ctx.setLineDash([]);
+          }
+
+          ctx.moveTo(fromNode.proj.x, fromNode.proj.y);
+          ctx.lineTo(toNode.proj.x, toNode.proj.y);
           ctx.stroke();
           ctx.setLineDash([]);
+
+          // Data pulse particle moving along corridor
+          if (isConnectedToActive) {
+            const flowProgress = (Math.sin(pulse * 2 + fromNode.lat) + 1) / 2;
+            const flowX = fromNode.proj.x + (toNode.proj.x - fromNode.proj.x) * flowProgress;
+            const flowY = fromNode.proj.y + (toNode.proj.y - fromNode.proj.y) * flowProgress;
+
+            ctx.beginPath();
+            ctx.arc(flowX, flowY, 3, 0, Math.PI * 2);
+            ctx.fillStyle = edge.isAir ? '#38bdf8' : '#10b981';
+            ctx.shadowColor = edge.isAir ? '#38bdf8' : '#10b981';
+            ctx.shadowBlur = 8;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+        }
+      });
+
+      // 5. Draw 3D Places Nodes
+      projectedNodes.forEach((node) => {
+        if (node.proj.scale <= 0) return;
+
+        const isSelected = node.id === activeId;
+        const isHovered = node.id === hoveredNode;
+        const nodeColor = isDisrupted && node.id === 'PUNE' ? '#f43f5e' : (node.nominalColor || node.color);
+
+        // If selected: draw 3D vertical beacon light column
+        if (isSelected) {
+          const topBeacon = project(node.x, node.y - 45, node.z);
+          const beaconGrad = ctx.createLinearGradient(node.proj.x, node.proj.y, topBeacon.x, topBeacon.y);
+          beaconGrad.addColorStop(0, `${nodeColor}aa`);
+          beaconGrad.addColorStop(1, 'transparent');
+
+          ctx.beginPath();
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = beaconGrad;
+          ctx.moveTo(node.proj.x, node.proj.y);
+          ctx.lineTo(topBeacon.x, topBeacon.y);
+          ctx.stroke();
+
+          // Concentric targeting radar rings
+          ctx.beginPath();
+          const targetRingSize = (14 + Math.sin(pulse * 3) * 4) * node.proj.scale;
+          ctx.arc(node.proj.x, node.proj.y, targetRingSize, 0, Math.PI * 2);
+          ctx.strokeStyle = nodeColor;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
         }
 
-        // Floating holographic label
-        if (!compact && pt.scale > 0.8) {
-          ctx.font = '10px "JetBrains Mono", monospace';
-          ctx.fillStyle = '#e2e8f0';
-          ctx.shadowBlur = 4;
-          ctx.shadowColor = '#000000';
-          ctx.fillText(node.name, pt.x + radius + 4, pt.y + 3);
-        }
+        // Outer halo
+        ctx.beginPath();
+        const baseRadius = isSelected ? 12 : isHovered ? 9 : 6;
+        ctx.arc(node.proj.x, node.proj.y, baseRadius * node.proj.scale, 0, Math.PI * 2);
+        ctx.fillStyle = `${nodeColor}33`;
+        ctx.fill();
+
+        // Core solid node
+        ctx.beginPath();
+        ctx.arc(node.proj.x, node.proj.y, (isSelected ? 5.5 : 3.5) * node.proj.scale, 0, Math.PI * 2);
+        ctx.fillStyle = nodeColor;
+        ctx.shadowColor = nodeColor;
+        ctx.shadowBlur = isSelected ? 14 : 6;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Place Code Label
+        ctx.font = `${isSelected ? 'bold 11px' : '9px'} monospace`;
+        ctx.fillStyle = isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.7)';
+        ctx.fillText(node.code, node.proj.x + 8 * node.proj.scale, node.proj.y + 3);
       });
 
       animationFrameId = requestAnimationFrame(render);
     };
 
-    render();
+    animationFrameId = requestAnimationFrame(render);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [mode, isDisrupted]);
+  }, [activeId, isDisrupted, tilt, hoveredNode]);
 
   return (
     <div
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`hologram-chamber ${isDisrupted ? 'disrupted' : ''}`}
-      style={{ height: compact ? '260px' : '360px' }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.85rem',
+        width: '100%',
+      }}
     >
-      {/* Scanline & Laser Overlays */}
-      <div className="hologram-scanlines" />
-      <div className="hologram-laser-sweep" />
-
-      {/* Top Left HUD Telemetry */}
-      <div className="hologram-hud-badge hologram-hud-top-left">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Activity size={12} color={isDisrupted ? '#f43f5e' : 'var(--accent-cyan)'} />
-          <span>HOLO-BEAM: {isDisrupted ? 'EMERGENCY_OVERRIDE' : 'ACTIVE_GRID'}</span>
-        </div>
-      </div>
-
-      {/* Top Right Mode Toggle */}
-      <div className="hologram-hud-badge hologram-hud-top-right">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Radio size={12} color="var(--accent-cyan)" />
-          <span>{mode} 3D PROJECTION</span>
-        </div>
-      </div>
-
-      {/* 3D Gyroscope Stage with Interactive Mouse Tilt */}
+      {/* 3D Hologram Projection Chamber */}
       <div
-        className="hologram-gyro-stage"
+        className={`hologram-chamber ${isDisrupted && activeId === 'PUNE' ? 'disrupted' : ''}`}
         style={{
-          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+          height: compact ? '220px' : '260px',
+          borderRadius: '14px',
+          position: 'relative',
+          cursor: hoveredNode ? 'pointer' : 'default',
         }}
+        onClick={handleCanvasClick}
       >
-        <div className="gyro-ring gyro-ring-1" />
-        <div className="gyro-ring gyro-ring-2" />
-        <div className="gyro-ring gyro-ring-3" />
+        <div className="hologram-scanlines" />
+        <div className="hologram-laser-sweep" />
 
-        {/* Real-time 3D Math Canvas */}
         <canvas
           ref={canvasRef}
-          width={compact ? 240 : 320}
-          height={compact ? 220 : 280}
-          style={{ position: 'relative', zIndex: 2 }}
+          width={compact ? 360 : 480}
+          height={compact ? 220 : 260}
+          style={{ width: '100%', height: '100%', display: 'block' }}
         />
-      </div>
 
-      {/* Projector Base Pedestal */}
-      <div className="hologram-pedestal" />
-      <div className="hologram-pedestal-light" />
-
-      {/* Bottom Live Holographic Status Banner */}
-      <div className="hologram-hud-bottom">
+        {/* Floating HUD Telemetry Badge */}
         <div
           style={{
-            padding: '0.35rem 0.85rem',
-            borderRadius: 'var(--border-radius-full)',
-            backgroundColor: isDisrupted ? 'rgba(244, 63, 94, 0.2)' : 'rgba(6, 182, 212, 0.15)',
-            border: `1px solid ${isDisrupted ? '#f43f5e' : '#06b6d4'}`,
-            fontSize: '0.72rem',
-            fontWeight: 700,
+            position: 'absolute',
+            top: '10px',
+            left: '12px',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.4rem',
-            color: isDisrupted ? '#fb7185' : '#38bdf8',
-            backdropFilter: 'blur(6px)',
+            gap: '0.45rem',
+            padding: '0.2rem 0.6rem',
+            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            border: '1px solid rgba(6, 182, 212, 0.3)',
+            borderRadius: '6px',
+            fontSize: '0.68rem',
+            fontFamily: 'monospace',
+            color: 'var(--accent-cyan)',
           }}
         >
-          {isDisrupted ? (
-            <>
-              <AlertTriangle size={13} color="#f43f5e" />
-              <span>DISRUPTION DETECTED: PUNE CHAKAN GRID OFFLINE</span>
-            </>
-          ) : (
-            <>
-              <ShieldCheck size={13} color="#10b981" />
-              <span>GUARDIAN KERNEL: ALL CORRIDORS NOMINAL (12ms)</span>
-            </>
-          )}
+          <Compass size={13} />
+          <span>PROJECTION: {currentPlace.name.toUpperCase()}</span>
         </div>
 
-        {/* Quick Mode Switches */}
-        <div style={{ display: 'flex', gap: '0.3rem' }}>
-          {['MESH', 'RADAR', 'CORE'].map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
+        {/* Disruption Warning Tag if selected is Pune */}
+        {isDisrupted && activeId === 'PUNE' && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '10px',
+              right: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.2rem 0.6rem',
+              backgroundColor: 'rgba(244, 63, 94, 0.25)',
+              border: '1px solid rgba(244, 63, 94, 0.6)',
+              borderRadius: '6px',
+              fontSize: '0.68rem',
+              fontWeight: 700,
+              color: '#fb7185',
+              fontFamily: 'monospace',
+            }}
+          >
+            <AlertTriangle size={13} />
+            <span>DISRUPTION EPICENTER</span>
+          </div>
+        )}
+      </div>
+
+      {/* Interactive Place Selector Bar */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem' }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
+            Active Logistics Hubs:
+          </span>
+          <span style={{ fontSize: '0.65rem', color: 'var(--accent-cyan)', fontFamily: 'monospace' }}>
+            CLICK TO ORIENT 3D TELEMETRY
+          </span>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            gap: '0.35rem',
+            overflowX: 'auto',
+            paddingBottom: '4px',
+          }}
+        >
+          {SPATIAL_PLACES.map((p) => {
+            const isSelected = p.id === activeId;
+            const isDisruptedPlace = isDisrupted && p.id === 'PUNE';
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => handlePlaceClick(p)}
+                style={{
+                  padding: '0.35rem 0.65rem',
+                  borderRadius: '6px',
+                  border: `1px solid ${isSelected ? (isDisruptedPlace ? '#f43f5e' : 'var(--accent-cyan)') : 'var(--border-color)'}`,
+                  backgroundColor: isSelected
+                    ? isDisruptedPlace ? 'rgba(244, 63, 94, 0.2)' : 'rgba(6, 182, 212, 0.18)'
+                    : 'rgba(255, 255, 255, 0.02)',
+                  color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                  fontSize: '0.72rem',
+                  fontWeight: isSelected ? 700 : 500,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  transition: 'all 0.15s ease',
+                  boxShadow: isSelected ? `0 0 10px ${isDisruptedPlace ? '#f43f5e40' : 'rgba(6, 182, 212, 0.3)'}` : 'none',
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: isDisruptedPlace ? '#f43f5e' : (p.nominalColor || p.color),
+                  }}
+                />
+                <span>{p.code} - {p.city}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3D Spatial Telemetry Details Card for Selected Place */}
+      <div
+        className="glass-panel"
+        style={{
+          padding: '1rem',
+          borderRadius: '10px',
+          border: `1px solid ${isDisrupted && activeId === 'PUNE' ? 'rgba(244, 63, 94, 0.4)' : 'rgba(6, 182, 212, 0.3)'}`,
+          backgroundColor: isDisrupted && activeId === 'PUNE' ? 'rgba(244, 63, 94, 0.08)' : 'rgba(13, 21, 39, 0.7)',
+        }}
+      >
+        {/* Place Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <MapPin size={15} color={isDisrupted && activeId === 'PUNE' ? '#f43f5e' : 'var(--accent-cyan)'} />
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                {currentPlace.name}
+              </h4>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px', marginLeft: '1.4rem' }}>
+              {currentPlace.tier} • {currentPlace.state}
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'right' }}>
+            <span
               style={{
-                background: mode === m ? 'rgba(6, 182, 212, 0.3)' : 'rgba(15, 23, 42, 0.6)',
-                border: `1px solid ${mode === m ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
-                color: mode === m ? '#38bdf8' : 'var(--text-muted)',
-                borderRadius: '4px',
                 fontSize: '0.65rem',
-                padding: '0.2rem 0.45rem',
-                cursor: 'pointer',
-                fontWeight: 600,
+                fontFamily: 'monospace',
+                padding: '0.15rem 0.45rem',
+                borderRadius: '4px',
+                backgroundColor: isDisrupted && activeId === 'PUNE' ? 'rgba(244, 63, 94, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                color: isDisrupted && activeId === 'PUNE' ? '#fb7185' : '#34d399',
+                border: `1px solid ${isDisrupted && activeId === 'PUNE' ? 'rgba(244, 63, 94, 0.4)' : 'rgba(16, 185, 129, 0.4)'}`,
+                fontWeight: 700,
               }}
             >
-              {m}
-            </button>
-          ))}
+              {isDisrupted && activeId === 'PUNE' ? '🚨 CRITICAL' : `● ${currentPlace.nominalRisk}`}
+            </span>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'monospace', marginTop: '2px' }}>
+              {currentPlace.lat.toFixed(4)}° N, {currentPlace.lng.toFixed(4)}° E
+            </div>
+          </div>
+        </div>
+
+        {/* Live Status & Reason */}
+        <div
+          style={{
+            padding: '0.5rem 0.75rem',
+            borderRadius: '6px',
+            backgroundColor: isDisrupted && activeId === 'PUNE' ? 'rgba(244, 63, 94, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+            fontSize: '0.75rem',
+            color: isDisrupted && activeId === 'PUNE' ? '#fb7185' : 'var(--text-primary)',
+            lineHeight: 1.4,
+            marginBottom: '0.75rem',
+          }}
+        >
+          {isDisrupted && activeId === 'PUNE' ? currentPlace.disruptedReason : currentPlace.nominalReason}
+        </div>
+
+        {/* 4-Metric Telemetry Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.45rem', marginBottom: '0.75rem' }}>
+          <div style={{ padding: '0.45rem', backgroundColor: 'var(--bg-elevated)', borderRadius: '6px' }}>
+            <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Inventory</div>
+            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)', marginTop: '2px' }}>
+              {currentPlace.inventoryValue}
+            </div>
+          </div>
+
+          <div style={{ padding: '0.45rem', backgroundColor: 'var(--bg-elevated)', borderRadius: '6px' }}>
+            <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Capacity</div>
+            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ffffff', marginTop: '2px' }}>
+              {currentPlace.capacityUtilization}
+            </div>
+          </div>
+
+          <div style={{ padding: '0.45rem', backgroundColor: 'var(--bg-elevated)', borderRadius: '6px' }}>
+            <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Buffer Days</div>
+            <div
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: isDisrupted && activeId === 'PUNE' ? '#f43f5e' : '#34d399',
+                marginTop: '2px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {currentPlace.bufferDays}
+            </div>
+          </div>
+
+          <div style={{ padding: '0.45rem', backgroundColor: 'var(--bg-elevated)', borderRadius: '6px' }}>
+            <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>In Transit</div>
+            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#fbbf24', marginTop: '2px' }}>
+              {currentPlace.activeShipments} Shipments
+            </div>
+          </div>
+        </div>
+
+        {/* Facilities & Corridors */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.72rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ color: 'var(--text-muted)', minWidth: '70px' }}>Facilities:</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{currentPlace.facilities.join(' • ')}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ color: 'var(--text-muted)', minWidth: '70px' }}>Corridors:</span>
+            <span style={{ color: 'var(--accent-cyan)' }}>{currentPlace.corridors.join(' • ')}</span>
+          </div>
         </div>
       </div>
     </div>
