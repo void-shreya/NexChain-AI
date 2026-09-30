@@ -7,7 +7,7 @@ High-performance, cyber-command control tower interface for autonomous supply ch
 - **Framework**: React 19 + Vite
 - **Styling**: Vanilla CSS Design System with custom HSL tokens, cyber-dark theme, and glassmorphism
 - **Routing**: React Router v6
-- **Maps**: Leaflet + OpenStreetMap CartoDB Dark Matter tiles
+- **Maps**: Leaflet + OpenStreetMap tiles (standard OSM layer)
 - **Charts**: Recharts (Responsive Line, Bar, and Pie analytics)
 - **Voice AI**: Web Speech API (SpeechRecognition + SpeechSynthesis vocal feedback)
 - **Real-Time**: Socket.io-client for live GPS tracking and 15-step agent execution

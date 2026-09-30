@@ -16,6 +16,16 @@ export const SupplyMap = ({
   const mapInstanceRef = useRef(null);
   const markersLayerRef = useRef(null);
 
+  // Clean up map instance on unmount
+  useEffect(() => {
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -25,13 +35,13 @@ export const SupplyMap = ({
         center,
         zoom,
         zoomControl: true,
-        attributionControl: false,
+        attributionControl: true,
       });
 
-      // CartoDB Dark Matter tiles for modern dark cyber-room aesthetic
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      // OpenStreetMap standard tiles (No API key required)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        subdomains: 'abcd',
+        attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
 
       const markersGroup = L.layerGroup().addTo(map);
