@@ -6,6 +6,7 @@
 [![GitHub Repository](https://img.shields.io/badge/GitHub-NexChain--AI-181717?style=for-the-badge&logo=github)](https://github.com/void-shreya/NexChain-AI)
 [![Database](https://img.shields.io/badge/Database-Supabase%20PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com)
 [![Realtime](https://img.shields.io/badge/Stream-Socket.io%20%2B%20Realtime-010101?style=for-the-badge&logo=socketdotio)](https://socket.io)
+[![Video Tutorial](https://drive.google.com/file/d/1oRyEuZv3WkfH063IAbrZI9v7zTYqkbq9/view?usp=sharing)]
 
 ---
 
